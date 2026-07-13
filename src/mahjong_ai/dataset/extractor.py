@@ -72,6 +72,7 @@ def _public_input(snapshot: dict[str, object], observer: PlayerPosition, target:
         "discards": discards,
         "melds": sanitized_melds,
         "turn_bucket": min(int(snapshot["turn"]) // 8, 13),
+        "sample_stage": snapshot["phase"],
         "visible_counts": snapshot["visible_counts"],
         "concealed_tile_counts": {position.name: sum(hands[position.name]) for position in PlayerPosition},
         "current_player": snapshot["current_player"],

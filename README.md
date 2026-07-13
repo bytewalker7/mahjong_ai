@@ -122,3 +122,17 @@ python -m mahjong_ai build-dataset --input data/full_games.jsonl --output data/b
 ```powershell
 python -m pytest
 ```
+# v0.6.0：公开信息对手风险模型
+
+v0.6.0 从 v0.5.0 产生的全知牌谱训练可解释的朴素贝叶斯模型。模型只使用实战中可见的公开信息，输出每种合法弃牌对三家的**模型估计放炮概率**，以及任意一家放炮的综合概率；它不会宣称为真实或精确概率，也不会把风险混入牌效率推荐。
+
+综合概率采用条件独立近似：`1 - product(1 - opponent_risk)`。三个对手的听牌状态和等待牌并非真正独立，因此该值只能作为模型估计。
+
+训练与预测：
+
+```powershell
+python -m mahjong_ai train-opponent-model --input data/bayes_samples.jsonl --output models/opponent_risk_v1.json
+python -m mahjong_ai predict-discard-risk --model models/opponent_risk_v1.json --state data/example_observation.json
+```
+
+`--state` 是一个 JSON 格式的 `Observation`：包含自己的 27 位计数手牌、公开弃牌/副露、公开牌计数、各家暗牌张数、当前玩家和阶段。预测只在“自己摸牌后、自己当前可弃牌”的状态输出候选牌。每种牌仅输出一次，并注明手中张数。输出中的三家综合风险明确为条件独立近似。
