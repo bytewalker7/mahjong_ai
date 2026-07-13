@@ -8,8 +8,7 @@ from pathlib import Path
 
 from .model import load_model, predict_discard_risks, save_model, train_and_evaluate
 from ..dataset.writer import load_samples
-from ..meld import Meld, MeldType
-from ..simulator.models import Observation, Phase
+from .observation import observation_from_dict
 from ..state.models import PlayerPosition
 from ..tiles import code_to_tile
 
@@ -17,21 +16,6 @@ _POSITION_NAMES = {
     PlayerPosition.SELF: "自己", PlayerPosition.LEFT: "上家",
     PlayerPosition.OPPOSITE: "对家", PlayerPosition.RIGHT: "下家",
 }
-
-
-def _observation_from_dict(data: dict[str, object]) -> Observation:
-    def position(value: object) -> PlayerPosition: return PlayerPosition[str(value)]
-    own_melds = tuple(Meld(MeldType[str(item["meld_type"])], int(item["tile"]), item.get("from_player")) for item in data.get("own_melds", []))
-    return Observation(
-        player=position(data["player"]), own_hand=tuple(int(x) for x in data["own_hand"]), own_melds=own_melds,
-        public_discards=tuple(tuple((int(tile), bool(used)) for tile, used in rows) for rows in data["public_discards"]),
-        public_melds=tuple(tuple((str(kind), None if tile is None else int(tile)) for kind, tile in rows) for rows in data["public_melds"]),
-        visible_counts=tuple(int(x) for x in data["visible_counts"]),
-        concealed_tile_counts=tuple(int(x) for x in data["concealed_tile_counts"]),
-        current_player=position(data["current_player"]), phase=Phase(str(data["phase"])),
-        wall_remaining=int(data["wall_remaining"]), turn=int(data["turn"]),
-        last_discard_tile=None if data.get("last_discard_tile") is None else int(data["last_discard_tile"]),
-    )
 
 
 def train_main(argv: list[str]) -> None:
@@ -53,7 +37,7 @@ def predict_main(argv: list[str]) -> None:
     parser.add_argument("--model", required=True); parser.add_argument("--state", required=True)
     args = parser.parse_args(argv)
     model = load_model(args.model)
-    observation = _observation_from_dict(json.loads(Path(args.state).read_text(encoding="utf-8")))
+    observation = observation_from_dict(json.loads(Path(args.state).read_text(encoding="utf-8")))
     predictions = predict_discard_risks(model, observation)
     if not predictions:
         print("当前 Observation 不处于自己摸牌后的合法弃牌状态。")

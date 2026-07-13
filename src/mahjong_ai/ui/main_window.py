@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from functools import partial
+import json
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -14,6 +15,8 @@ from PySide6.QtWidgets import (
 from ..analysis import analyze_discards, analyze_hand, format_tiles
 from ..meld import MeldType
 from ..persistence import load_state, save_state
+from ..risk.model import BayesianOpponentModel, DiscardRiskPrediction, load_model, predict_discard_risks
+from ..risk.observation import observation_from_game_state, observation_to_dict
 from ..shanten import calculate_shanten
 from ..state import (
     AdvanceTurn, CallExposedGang, CallPeng, DeclareAddedGang,
@@ -41,6 +44,8 @@ class MainWindow(QMainWindow):
         self.state = new_game()
         self.initial_tiles: list[int] = []
         self.tile_mode = "disabled"
+        self.risk_model: BayesianOpponentModel | None = None
+        self.risk_predictions: tuple[DiscardRiskPrediction, ...] = ()
         self.setWindowTitle("麻将 AI — 手动记牌桌")
         self.resize(1300, 900)
         self._build_ui()
@@ -103,6 +108,12 @@ class MainWindow(QMainWindow):
             button = QPushButton(text)
             button.clicked.connect(callback)
             header.addWidget(button)
+        risk_load = QPushButton("加载风险模型")
+        risk_load.clicked.connect(self._load_risk_model)
+        header.addWidget(risk_load)
+        risk_export = QPushButton("导出公开状态")
+        risk_export.clicked.connect(self._export_observation)
+        header.addWidget(risk_export)
         header.addStretch()
         outer.addLayout(header)
 
@@ -194,10 +205,54 @@ class MainWindow(QMainWindow):
             except (OSError, ValueError) as error:
                 self._error(error)
 
+    def _load_risk_model(self) -> None:
+        path, _ = QFileDialog.getOpenFileName(self, "加载风险模型", "models", "风险模型 (*.json)")
+        if not path:
+            return
+        try:
+            self.risk_model = load_model(path)
+            self._refresh()
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            self.risk_model = None
+            QMessageBox.warning(self, "加载失败", f"无法加载风险模型：{error}")
+
+    def _export_observation(self) -> None:
+        path, _ = QFileDialog.getSaveFileName(self, "导出公开状态", "data/current_observation.json", "公开状态 (*.json)")
+        if not path:
+            return
+        try:
+            with open(path, "w", encoding="utf-8") as handle:
+                json.dump(observation_to_dict(observation_from_game_state(self.state)), handle, ensure_ascii=False, indent=2)
+        except (OSError, ValueError, TypeError) as error:
+            QMessageBox.warning(self, "导出失败", f"无法导出公开状态：{error}")
+
     def _refresh(self) -> None:
         self._refresh_player_views()
         self._refresh_context_actions()
+        self._refresh_risk_analysis()
         self._refresh_hand()
+
+    def _refresh_risk_analysis(self) -> None:
+        """Refresh public-only risk when SELF is in a legal discard state."""
+        self.risk_predictions = ()
+        if self.risk_model is None:
+            return
+        try:
+            self.risk_predictions = predict_discard_risks(self.risk_model, observation_from_game_state(self.state))
+        except (ValueError, TypeError) as error:
+            self.analysis_view.setPlainText(f"风险模型无法预测：{error}")
+            return
+        if not self.risk_predictions:
+            self.analysis_view.setPlainText("风险预测：当前不是自己的合法弃牌阶段。")
+            return
+        text = ["弃牌风险（模型估计；三家综合值为条件独立近似）"]
+        for prediction in self.risk_predictions:
+            details = "  ".join(
+                f"{_POSITION_TEXT[risk.target_player]} {risk.deal_in_probability:.2%}"
+                for risk in prediction.opponent_risks
+            )
+            text.append(f"{code_to_tile(prediction.tile)}：综合 {prediction.combined_deal_in_probability:.2%}；{details}")
+        self.analysis_view.setPlainText("\n".join(text))
 
     def _refresh_player_views(self) -> None:
         for position, view in self.player_views.items():
@@ -223,6 +278,12 @@ class MainWindow(QMainWindow):
             for _ in range(count):
                 button = QPushButton(code_to_tile(tile))
                 button.setEnabled(enabled)
+                prediction = next((item for item in self.risk_predictions if item.tile == tile), None)
+                if prediction is not None:
+                    risk = prediction.combined_deal_in_probability
+                    color = "#16a34a" if risk < 0.03 else "#d97706" if risk < 0.08 else "#dc2626"
+                    button.setStyleSheet(f"border: 2px solid {color};")
+                    button.setToolTip(f"模型估计综合放炮概率：{risk:.2%}")
                 button.clicked.connect(partial(self._discard_own_tile, tile))
                 self.hand_layout.addWidget(button)
 
