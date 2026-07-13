@@ -11,6 +11,7 @@ requires-python = ">=3.11"
 [project.optional-dependencies]
 test = ["pytest>=8.0"]
 ui = ["PySide6-Essentials>=6.7"]
+rl = ["torch>=2.2"]
 
 [project.scripts]
 mahjong-ai = "mahjong_ai.cli:main"

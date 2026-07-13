@@ -7,6 +7,7 @@ from enum import Enum
 
 from ..meld import Meld
 from ..state.models import PlayerPosition, RuleConfig
+from .scoring import ScoreRules
 
 
 class Phase(Enum):
@@ -104,6 +105,10 @@ class FullGameState:
     result: str | None = None
     turn: int = 0
     events: list[dict[str, object]] = field(default_factory=list)
+    score_rules: ScoreRules = field(default_factory=ScoreRules)
+    scores: dict[PlayerPosition, int] = field(default_factory=dict)
+    pao_counts: dict[PlayerPosition, int] = field(default_factory=dict)
+    score_transactions: list[dict[str, object]] = field(default_factory=list)
 
     @property
     def wall_remaining(self) -> int:
@@ -131,3 +136,4 @@ class StepResult:
     observation: Observation
     done: bool
     event: dict[str, object]
+    score_delta: tuple[int, ...] = ()

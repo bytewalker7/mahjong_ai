@@ -15,13 +15,15 @@ from .models import (
     Observation, PassAction, PengAction, Phase, ReplacementDrawAction,
     RonAction, StepResult, TsumoAction,
 )
+from .scoring import ScoreRules, empty_scores
 
 
 class MahjongEnvironment:
     """A deterministic environment; strategies receive only :class:`Observation`."""
 
-    def __init__(self, rules: RuleConfig | None = None) -> None:
+    def __init__(self, rules: RuleConfig | None = None, score_rules: ScoreRules | None = None) -> None:
         self.rules = rules or RuleConfig()
+        self.score_rules = score_rules or ScoreRules()
         self._rng = random.Random()
         self._state: FullGameState | None = None
 
@@ -31,7 +33,7 @@ class MahjongEnvironment:
             raise RuntimeError("call reset() before reading full_state")
         return self._state
 
-    def reset(self, seed: int | None = None) -> Observation:
+    def reset(self, seed: int | None = None, pao_counts: dict[PlayerPosition, int] | None = None) -> Observation:
         self._rng = random.Random(seed)
         dealer = self._rng.choice(tuple(PlayerPosition))
         deck = [tile for tile in range(TILE_KIND_COUNT) for _ in range(COPIES_PER_TILE)]
@@ -52,6 +54,9 @@ class MahjongEnvironment:
             dealer=dealer,
             current_player=dealer,
             phase=Phase.DISCARD,
+            score_rules=self.score_rules,
+            scores=empty_scores(),
+            pao_counts=self._validated_pao_counts(pao_counts),
         )
         self._record("start", dealer, None)
         self._validate()
@@ -116,6 +121,7 @@ class MahjongEnvironment:
 
     def step(self, action: Action) -> StepResult:
         state = self.full_state
+        before_scores = state.scores.copy()
         if action not in self.legal_actions():
             raise ValueError(f"illegal action {action!r} in {state.phase.value}")
         player = state.current_player
@@ -137,6 +143,7 @@ class MahjongEnvironment:
         elif isinstance(action, ConcealedGangAction):
             state.players[player].hand[action.tile] -= 4
             state.players[player].melds.append(Meld(MeldType.CONCEALED_GANG, action.tile))
+            self._award_gang(player, MeldType.CONCEALED_GANG)
             state.phase = Phase.REPLACEMENT_DRAW
             self._record("concealed_gang", player, action.tile)
             if state.wall_remaining == 0:
@@ -147,6 +154,7 @@ class MahjongEnvironment:
             old = melds[index]
             state.players[player].hand[action.tile] -= 1
             melds[index] = Meld(MeldType.ADDED_GANG, action.tile, old.from_player)
+            self._award_gang(player, MeldType.ADDED_GANG)
             state.phase = Phase.REPLACEMENT_DRAW
             self._record("added_gang", player, action.tile)
             if state.wall_remaining == 0:
@@ -164,7 +172,11 @@ class MahjongEnvironment:
         else:
             raise AssertionError("unhandled action")
         self._validate()
-        return StepResult(self.observation(self.full_state.current_player), self.full_state.phase is Phase.FINISHED, deepcopy(self.full_state.events[-1]))
+        return StepResult(
+            self.observation(self.full_state.current_player), self.full_state.phase is Phase.FINISHED,
+            deepcopy(self.full_state.events[-1]),
+            tuple(self.full_state.scores[position] - before_scores[position] for position in PlayerPosition),
+        )
 
     def _draw(self, player: PlayerPosition, kind: str) -> None:
         state = self.full_state
@@ -195,6 +207,8 @@ class MahjongEnvironment:
                     state.players[player].hand[tile] -= remove
                     meld_type = MeldType.EXPOSED_GANG if action_type is ExposedGangAction else MeldType.PENG
                     state.players[player].melds.append(Meld(meld_type, tile, source))
+                    if meld_type is MeldType.EXPOSED_GANG:
+                        self._award_gang(player, meld_type)
                     state.current_player = player
                     if action_type is ExposedGangAction:
                         if state.wall_remaining == 0:
@@ -220,8 +234,52 @@ class MahjongEnvironment:
         state = self.full_state
         state.winner = winner
         state.result = result
+        if winner is not None:
+            self._settle_hu(winner, result)
+            self._settle_paozi(winner)
         state.phase = Phase.FINISHED
         self._record("finish", winner, None)
+
+    def _award_gang(self, player: PlayerPosition, meld_type: MeldType) -> None:
+        """Rules specify a direct gang gain; no gang payer is specified."""
+        points = self.score_rules.gang_points(meld_type)
+        self.full_state.scores[player] += points
+        self.full_state.score_transactions.append({"kind": meld_type.value, "player": player.name, "points": points})
+
+    def _settle_hu(self, winner: PlayerPosition, result: str) -> None:
+        state = self.full_state
+        multiplier = self.score_rules.dealer_hu_multiplier if winner is state.dealer else 1
+        if result == "ron":
+            assert state.last_discard is not None
+            points = self.score_rules.ron_points * multiplier
+            payer = state.last_discard.player
+            state.scores[winner] += points
+            state.scores[payer] -= points
+            state.score_transactions.append({"kind": "ron", "winner": winner.name, "payer": payer.name, "points": points})
+        elif result == "tsumo":
+            payment = self.score_rules.tsumo_payment * multiplier
+            for payer in PlayerPosition:
+                if payer is not winner:
+                    state.scores[payer] -= payment
+                    state.scores[winner] += payment
+            state.score_transactions.append({"kind": "tsumo", "winner": winner.name, "payment_per_opponent": payment})
+
+    def _settle_paozi(self, winner: PlayerPosition) -> None:
+        state = self.full_state
+        # rules.markdown: each player's own paozi is an extra +/- one point.
+        for player, count in state.pao_counts.items():
+            points = int(count)
+            state.scores[player] += points if player is winner else -points
+        state.score_transactions.append({"kind": "paozi", "winner": winner.name, "counts": {player.name: count for player, count in state.pao_counts.items()}})
+
+    def _validated_pao_counts(self, counts: dict[PlayerPosition, int] | None) -> dict[PlayerPosition, int]:
+        result = {position: 0 for position in PlayerPosition}
+        if counts is not None:
+            for position, count in counts.items():
+                if position not in result or not isinstance(count, int) or not 0 <= count <= self.score_rules.max_pao_count:
+                    raise ValueError("pao count must be an integer in 0..4 for each player")
+                result[position] = count
+        return result
 
     def _can_win_with(self, player: PlayerPosition, tile: int) -> bool:
         hand = self.full_state.players[player].hand.copy()
@@ -256,6 +314,8 @@ class MahjongEnvironment:
             "shanten": {position.name: calculate_shanten(state.players[position].hand, len(state.players[position].melds)) for position in PlayerPosition},
             "is_tenpai": {position.name: calculate_shanten(state.players[position].hand, len(state.players[position].melds)) == 0 for position in PlayerPosition},
             "waits": {position.name: list(self._waits(position)) for position in PlayerPosition},
+            "scores": {position.name: state.scores[position] for position in PlayerPosition},
+            "pao_counts": {position.name: state.pao_counts[position] for position in PlayerPosition},
         }
 
     def _waits(self, player: PlayerPosition) -> tuple[int, ...]:

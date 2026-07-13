@@ -40,6 +40,16 @@ def main() -> None:
 
         predict_main(sys.argv[2:])
         return
+    if len(sys.argv) > 1 and sys.argv[1].lower() == "train-rl":
+        from .rl.cli import train_main
+
+        train_main(sys.argv[2:])
+        return
+    if len(sys.argv) > 1 and sys.argv[1].lower() == "evaluate-rl":
+        from .rl.cli import evaluate_main
+
+        evaluate_main(sys.argv[2:])
+        return
     parser = argparse.ArgumentParser(description="Analyse a simplified three-suit Mahjong hand.")
     parser.add_argument("hand", help="Hand tiles, e.g. '1w 2w 3w 5p'")
     parser.add_argument("--visible", default="", help="Known tiles outside the hand (discards/melds)")

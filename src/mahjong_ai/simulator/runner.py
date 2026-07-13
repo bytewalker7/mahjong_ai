@@ -63,4 +63,7 @@ def simulate_game(seed: int, game_id: str | None = None, strategies: dict[Player
         "events": final.events,
         "winner": final.winner.name if final.winner is not None else None,
         "final_result": final.result,
+        "final_scores": {position.name: final.scores[position] for position in PlayerPosition},
+        "pao_counts": {position.name: final.pao_counts[position] for position in PlayerPosition},
+        "score_transactions": final.score_transactions,
     }

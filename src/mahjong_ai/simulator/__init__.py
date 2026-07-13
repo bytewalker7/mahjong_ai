@@ -7,10 +7,11 @@ from .models import (
     StepResult, TsumoAction,
 )
 from .strategies import HeuristicPlayer, NoisyHeuristicPlayer, RandomPlayer
+from .scoring import ScoreRules
 
 __all__ = [
     "Action", "AddedGangAction", "ConcealedGangAction", "DiscardAction",
     "DrawAction", "ExposedGangAction", "HeuristicPlayer", "MahjongEnvironment",
     "NoisyHeuristicPlayer", "PassAction", "PengAction", "RandomPlayer",
-    "ReplacementDrawAction", "RonAction", "StepResult", "TsumoAction",
+    "ReplacementDrawAction", "RonAction", "ScoreRules", "StepResult", "TsumoAction",
 ]

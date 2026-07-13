@@ -1,5 +1,17 @@
 # mahjong_ai
 
+## v0.7：强化学习弃牌训练
+
+v0.7 的训练环境只让 RL 模型决定自己的弃牌；三家对手和自己的非弃牌动作均使用内部随机合法策略，不将贝叶斯风险模型作为训练特征或奖励。可先用现有规则弃牌策略生成行为克隆示范，让网络从规则模型开始，再进行 RL 微调；规则策略不会成为训练对手。模拟器按 `rules.markdown` 记录点炮、自摸、庄家胡牌翻倍、暗杠/放杠/补杠与 0–4 炮子分；RL 训练和评测默认将四家炮子固定为 0。训练完成后会用同一组固定种子，将 RL 模型与原有规则弃牌策略分别对阵随机对手，并把平均分、胜率、流局率、放炮率写入报告。
+
+安装训练依赖后再由用户手动开始训练：
+
+```powershell
+python -m pip install -e ".[rl]"
+python -m mahjong_ai train-rl --episodes 50000 --pretrain-games 5000 --seed 42 --output models/rl_discard_v1.json --report artifacts/rl_discard_v1_report.json --eval-games 1000
+python -m mahjong_ai evaluate-rl --model models/rl_discard_v1.json --games 5000 --seed 2026
+```
+
 纯 Python 的简化麻将分析与牌局状态项目。仅使用万、条、筒 27 种牌，按 `4 面子 + 1 将` 判断胡牌；不含网页、完整对局 AI、计分或特殊牌型。
 
 ## 安装与运行
