@@ -247,6 +247,12 @@ class MainWindow(QMainWindow):
             return
 
         self.initial_label.setText("")
+        if self.state.round_finished:
+            winner = self.state.events[-1].player if isinstance(self.state.events[-1], DeclareWin) else None
+            winner_text = _POSITION_TEXT[winner] if winner is not None else "未知玩家"
+            self.context_label.setText(f"本局已结束：{winner_text}胡牌。可以保存、撤销或开始新一局。")
+            self._set_tile_buttons(False)
+            return
         current = self.state.current_player
         if self._awaiting_response():
             source = self.state.last_discard.player
@@ -420,7 +426,18 @@ class MainWindow(QMainWindow):
         return {MeldType.PENG: "碰", MeldType.EXPOSED_GANG: "明杠", MeldType.CONCEALED_GANG: "暗杠", MeldType.ADDED_GANG: "补杠"}[meld_type]
 
     def _error(self, error: Exception) -> None:
-        QMessageBox.warning(self, "操作无效", "该操作不符合当前牌局状态。请检查轮次、手牌数量、最后一张弃牌或副露条件。")
+        QMessageBox.warning(self, "操作无效", f"该操作不符合当前牌局状态。\n\n原因：{self._error_reason(error)}")
+
+    @staticmethod
+    def _error_reason(error: Exception) -> str:
+        text = str(error)
+        translations = {
+            "the round has already finished": "本局已经结束。",
+            "only the current player may win without an available last discard": "这不是可胡的最后一张弃牌。",
+            "the last discard is no longer available for calls": "该弃牌已经过了响应时机。",
+            "a tile kind exceeds the configured copy limit": "该牌加上已知牌会超过四张。",
+        }
+        return translations.get(text, "请检查当前轮次、手牌数量、最后一张弃牌或副露条件。")
 
 
 def main() -> None:
