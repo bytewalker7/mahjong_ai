@@ -85,6 +85,8 @@ def test_turn_and_call_source_validation() -> None:
         apply_event(state, CallPeng(RIGHT, tile_to_code("2w"), SELF))
     state = apply_event(state, AdvanceTurn(SELF))
     assert state.current_player is RIGHT
+    with pytest.raises(StateValidationError):
+        apply_event(state, CallPeng(RIGHT, tile_to_code("1w"), SELF))
 
 
 def test_win_finishes_round_and_rejects_later_actions() -> None:
@@ -108,3 +110,30 @@ def test_rejects_public_tiles_that_would_exceed_four_copies() -> None:
     state = apply_event(state, DiscardTile(LEFT, tile_to_code("1w")))
     with pytest.raises(StateValidationError):
         apply_event(state, CallExposedGang(RIGHT, tile_to_code("1w"), LEFT))
+
+
+def test_rejects_discard_after_another_player_peng_when_self_holds_fourth_copy() -> None:
+    four_s = tile_to_code("4s")
+    hand = tuple(
+        [four_s]
+        + [tile_to_code("1w")] * 4
+        + [tile_to_code("2w")] * 4
+        + [tile_to_code("3w")] * 4
+        + [tile_to_code("5w")]
+    )
+    state = apply_event(new_game(), StartRound(SELF))
+    state = apply_event(state, SetOwnInitialHand(hand))
+    state = apply_event(state, DiscardTile(SELF, tile_to_code("5w")))
+    state = apply_event(state, AdvanceTurn(SELF))
+    state = apply_event(state, HiddenDraw(RIGHT))
+    state = apply_event(state, DiscardTile(RIGHT, tile_to_code("6w")))
+    state = apply_event(state, AdvanceTurn(RIGHT))
+    state = apply_event(state, HiddenDraw(OPPOSITE))
+    state = apply_event(state, DiscardTile(OPPOSITE, tile_to_code("6w")))
+    state = apply_event(state, AdvanceTurn(OPPOSITE))
+    state = apply_event(state, HiddenDraw(LEFT))
+    state = apply_event(state, DiscardTile(LEFT, four_s))
+    state = apply_event(state, CallPeng(OPPOSITE, four_s, LEFT))
+
+    with pytest.raises(StateValidationError):
+        apply_event(state, DiscardTile(OPPOSITE, four_s))

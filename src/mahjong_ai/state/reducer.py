@@ -213,6 +213,8 @@ def _claim_last_discard(state: GameState, caller: PlayerPosition, source: Player
     discard = state.last_discard
     if discard is None or discard.player is not source or discard.tile != tile:
         raise StateValidationError("call must use the matching last discard")
+    if state.current_player is not source:
+        raise StateValidationError("the last discard is no longer available for calls")
     if discard.called_by is not None:
         raise StateValidationError("last discard has already been called")
     if caller is source:
