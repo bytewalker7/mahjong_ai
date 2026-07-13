@@ -21,7 +21,40 @@ python -m mahjong_ai "..." --visible "1w 1w 9p"
 
 `mahjong_ai.state` 提供只记录公开信息的四人牌局状态引擎，支持：开局、设置自己的初始手牌、摸牌、弃牌、碰、明杠、暗杠、补杠、胡牌、轮转与撤销。
 
-状态引擎目前是 Python API 和测试驱动的模块，**还没有单独的交互式命令行入口**。命令行 `python -m mahjong_ai ...` 仍只用于手牌分析。
+状态引擎提供持续运行的交互式命令行。启动它：
+
+```powershell
+python -m mahjong_ai game
+```
+
+输入 `help` 查看所有事件命令；使用 `status` 查看状态，轮到 `SELF` 时输入 `analyze` 获取向听、听牌、有效牌和弃牌推荐。输入 `undo` 撤销上一个事件，`quit` 退出。
+
+一个最小流程（庄家为自己）：
+
+```text
+start self
+hand 1w 2w 3w 4w 5w 6w 7w 8w 9w 2s 2s 2s 5p 9p
+analyze
+discard self 5p
+next self
+hidden-draw right
+discard right 9p
+```
+
+副露命令示例：`peng right self 3w`、`exposed-gang left right 5p`、`concealed-gang self 7s`、`added-gang self 7s`。所有命令都会通过状态引擎验证轮次、牌数和公开牌数量。
+
+## v0.4 桌面录入界面
+
+安装桌面界面可选依赖后启动：
+
+```powershell
+python -m pip install -e ".[ui,test]"
+python -m mahjong_ai ui
+```
+
+界面使用 PySide6，提供四家独立的弃牌河与副露区、当前玩家和最后弃牌标记、排序后的自己的手牌、牌面选择区、分析面板，以及新一局、撤销、保存和加载按钮。
+
+基本录入顺序：先在下方事件区选择庄家并点击 **New round**；随后点击牌面依次组成自己的初始手牌，再点击 **Apply initial hand**。之后选择玩家、选择动作，再点击牌面即可生成对应事件。其他玩家摸牌用 **Hidden draw**；轮到自己时点击 **Analyze SELF** 查看推荐。
 
 运行状态引擎测试：
 

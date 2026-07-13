@@ -3,12 +3,23 @@
 from __future__ import annotations
 
 import argparse
+import sys
 
 from .analysis import analyze_discards, analyze_hand, format_tiles
 from .tiles import TileError, code_to_tile, counts_from_codes, parse_tiles
 
 
 def main() -> None:
+    if len(sys.argv) > 1 and sys.argv[1].lower() == "game":
+        from .game_cli import main as game_main
+
+        game_main()
+        return
+    if len(sys.argv) > 1 and sys.argv[1].lower() == "ui":
+        from .ui.main_window import main as ui_main
+
+        ui_main()
+        return
     parser = argparse.ArgumentParser(description="Analyse a simplified three-suit Mahjong hand.")
     parser.add_argument("hand", help="Hand tiles, e.g. '1w 2w 3w 5p'")
     parser.add_argument("--visible", default="", help="Known tiles outside the hand (discards/melds)")
