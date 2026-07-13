@@ -20,6 +20,16 @@ def main() -> None:
 
         ui_main()
         return
+    if len(sys.argv) > 1 and sys.argv[1].lower() == "simulate":
+        from .simulator.cli import simulate_main
+
+        simulate_main(sys.argv[2:])
+        return
+    if len(sys.argv) > 1 and sys.argv[1].lower() == "build-dataset":
+        from .simulator.cli import dataset_main
+
+        dataset_main(sys.argv[2:])
+        return
     parser = argparse.ArgumentParser(description="Analyse a simplified three-suit Mahjong hand.")
     parser.add_argument("hand", help="Hand tiles, e.g. '1w 2w 3w 5p'")
     parser.add_argument("--visible", default="", help="Known tiles outside the hand (discards/melds)")

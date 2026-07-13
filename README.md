@@ -97,6 +97,24 @@ assert state.visible_counts[tile_to_code("1w")] == 3
 
 上例中，自己的 `1w` 被 RIGHT 碰走后，弃牌河中的那张会标记为已使用；公开牌中 `1w` 总数为 3，不会被重复统计为“弃牌 1 张 + 碰牌 3 张”。
 
+## v0.5 全知模拟与数据集
+
+自动模拟器使用与项目一致的 108 张三门牌、平胡、碰和四种杠规则。它保存完整暗手、牌墙和逐步快照，但策略只能收到自己的手牌与公开观察。
+
+生成全知 JSONL 牌谱：
+
+```powershell
+python -m mahjong_ai simulate --games 10000 --seed 42 --output data/full_games.jsonl
+```
+
+从牌谱提取公开特征与隐藏标签：
+
+```powershell
+python -m mahjong_ai build-dataset --input data/full_games.jsonl --output data/bayes_samples.jsonl
+```
+
+样本在“摸牌后弃牌前”和“弃牌后响应前”提取。每条输入只含观察者手牌与公开桌面信息；目标玩家的向听、听牌和危险牌掩码只作为隐藏标签。目标处于 14 张弃牌状态时，危险牌掩码全为假，不假设其未来会弃哪一张牌。
+
 ## 测试
 
 运行全部测试：

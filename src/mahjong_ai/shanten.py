@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 from .meld import validate_fixed_melds
 from .tiles import validate_counts
 
@@ -17,6 +19,13 @@ def calculate_shanten(counts: list[int], fixed_melds: int = 0) -> int:
     """
     hand = validate_counts(counts)
     fixed_melds = validate_fixed_melds(fixed_melds)
+    return _calculate_shanten_cached(tuple(hand), fixed_melds)
+
+
+@lru_cache(maxsize=250_000)
+def _calculate_shanten_cached(counts: tuple[int, ...], fixed_melds: int) -> int:
+    """Memoized implementation for repeated candidate-discard evaluation."""
+    hand = list(counts)
     best = 8
 
     def visit(index: int, melds: int, taatsu: int, has_pair: int) -> None:
