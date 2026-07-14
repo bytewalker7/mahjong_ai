@@ -10,9 +10,27 @@ Window {
     minimumHeight: 630
     visible: true
     color: "#170c08"
-    title: "麻将桌 QML 静态视觉稿"
+    title: "Mahjong AI"
 
+    property int speedIndex: 1
+    property var speedValues: [250, 550, 900]
+    property var speedLabels: ["FAST", "NORMAL", "SLOW"]
+    property string errorMessage: ""
     readonly property real fitScale: Math.min(width / 1600, height / 900)
+
+    Connections {
+        target: gameBridge
+        function onErrorOccurred(message) {
+            window.errorMessage = message
+            errorTimer.restart()
+        }
+    }
+
+    Timer {
+        id: errorTimer
+        interval: 2600
+        onTriggered: window.errorMessage = ""
+    }
 
     Rectangle {
         anchors.fill: parent
@@ -45,8 +63,12 @@ Window {
         anchors.centerIn: parent
         scale: window.fitScale
 
+        MouseArea {
+            anchors.fill: parent
+            onClicked: gameBridge.clearSelection()
+        }
+
         Rectangle {
-            id: tableShadow
             x: 132
             y: 19
             width: 1336
@@ -108,34 +130,10 @@ Window {
                 }
                 border.color: "#163f3d"
                 border.width: 5
-
-                Repeater {
-                    model: 20
-                    Rectangle {
-                        required property int index
-                        x: index * cloth.width / 20
-                        width: 1
-                        height: cloth.height
-                        color: "#89d9cd"
-                        opacity: 0.035
-                    }
-                }
-
-                Repeater {
-                    model: 14
-                    Rectangle {
-                        required property int index
-                        y: index * cloth.height / 14
-                        width: cloth.width
-                        height: 1
-                        color: "#89d9cd"
-                        opacity: 0.028
-                    }
-                }
             }
 
             OpponentHand {
-                concealedTileCount: 13
+                concealedTileCount: gameBridge.oppositeConcealedCount
                 tileWidth: 42
                 tileHeight: 74
                 overlap: 5
@@ -143,31 +141,32 @@ Window {
                 y: 47
             }
 
+            // Left and right are deliberately reversed by 180 degrees from
+            // the earlier draft, as requested. The entire hand is rotated.
             OpponentHand {
-                concealedTileCount: 13
+                concealedTileCount: gameBridge.leftConcealedCount
                 tileWidth: 42
                 tileHeight: 74
                 overlap: 5
                 x: 57 - width / 2
                 y: table.height / 2 - height / 2
-                rotation: 90
+                rotation: -90
                 transformOrigin: Item.Center
             }
 
             OpponentHand {
-                concealedTileCount: 13
+                concealedTileCount: gameBridge.rightConcealedCount
                 tileWidth: 42
                 tileHeight: 74
                 overlap: 5
                 x: table.width - 57 - width / 2
                 y: table.height / 2 - height / 2
-                rotation: -90
+                rotation: 90
                 transformOrigin: Item.Center
             }
 
-            // Public discards arranged around the centre like the reference.
             DiscardRiver {
-                tiles: ["2s", "4p", "7w", "6p", "8p", "5s", "3s", "1s", "5w", "2p", "9w", "1p"]
+                tiles: gameBridge.oppositeDiscards
                 columns: 6
                 tileWidth: 35
                 tileHeight: 47
@@ -178,7 +177,7 @@ Window {
             }
 
             DiscardRiver {
-                tiles: ["2w", "5w", "7w", "3p", "1p", "9w", "8w", "6s", "5p", "2s", "1s"]
+                tiles: gameBridge.leftDiscards
                 columns: 6
                 tileWidth: 35
                 tileHeight: 47
@@ -189,7 +188,7 @@ Window {
             }
 
             DiscardRiver {
-                tiles: ["1p", "9w", "7w", "4p", "3s", "1s", "2w", "5s", "8p", "6p", "1w"]
+                tiles: gameBridge.rightDiscards
                 columns: 6
                 tileWidth: 35
                 tileHeight: 47
@@ -200,7 +199,7 @@ Window {
             }
 
             DiscardRiver {
-                tiles: ["6w", "5w", "1s", "1p", "5p", "7w", "1w", "7w", "5p", "8p", "1w", "2p", "6p", "9w"]
+                tiles: gameBridge.selfDiscards
                 columns: 8
                 tileWidth: 37
                 tileHeight: 50
@@ -208,56 +207,80 @@ Window {
                 y: 586
             }
 
+            MeldStrip {
+                tiles: gameBridge.oppositeMelds
+                tileWidth: 38
+                tileHeight: 52
+                x: 270
+                y: 128
+                rotation: 180
+                transformOrigin: Item.Center
+            }
+
+            MeldStrip {
+                tiles: gameBridge.leftMelds
+                tileWidth: 38
+                tileHeight: 52
+                x: 165 - width / 2
+                y: 650
+                rotation: 90
+                transformOrigin: Item.Center
+            }
+
+            MeldStrip {
+                tiles: gameBridge.rightMelds
+                tileWidth: 38
+                tileHeight: 52
+                x: table.width - 165 - width / 2
+                y: 190
+                rotation: -90
+                transformOrigin: Item.Center
+            }
+
             TurnDial {
                 x: table.width / 2 - width / 2
                 y: table.height / 2 - height / 2 - 12
-                wallRemaining: 31
-                activeSide: 3
-            }
-
-            Text {
-                x: table.width / 2 - width / 2
-                y: 563
-                text: "BASE 300"
-                color: "#183e42"
-                font.pixelSize: 22
-                font.bold: true
-                font.family: "Microsoft YaHei"
-                renderType: Text.NativeRendering
+                wallRemaining: gameBridge.wallRemaining
+                activeSide: gameBridge.dialSide
             }
 
             Row {
                 id: ownHand
-                x: 128
+                x: 105
                 y: 748
                 spacing: 2
-                property var tiles: ["4s", "5s", "6s", "7s", "8s", "4p", "5p", "7p", "2p"]
 
                 Repeater {
-                    model: ownHand.tiles
-                    delegate: FaceTile {
-                        required property string modelData
-                        tileCode: modelData
-                        tileWidth: 67
-                        tileHeight: 92
+                    model: gameBridge.handTiles
+                    delegate: Item {
+                        required property var modelData
+                        width: 69 + (modelData.drawn ? 18 : 0)
+                        height: 112
+
+                        FaceTile {
+                            x: modelData.drawn ? 18 : 0
+                            y: modelData.selected ? -17 : 0
+                            tileCode: modelData.code
+                            tileWidth: 67
+                            tileHeight: 92
+                            selected: modelData.selected
+                            interactive: modelData.legal
+                            opacity: modelData.legal ? 1.0 : 0.82
+                            onClicked: gameBridge.clickTileAt(modelData.instance)
+
+                            Behavior on y { NumberAnimation { duration: 130; easing.type: Easing.OutCubic } }
+                        }
                     }
                 }
             }
 
-            // Two public melds at the human player's right, separated from hand.
-            Row {
-                x: 1035
+            MeldStrip {
+                id: selfMeldStrip
+                tiles: gameBridge.selfMelds
+                tileWidth: 48
+                tileHeight: 66
+                x: table.width - width - 105
                 y: 757
-                spacing: 2
-                Repeater {
-                    model: ["9p", "9p", "9p", "6s", "6s", "6s"]
-                    delegate: FaceTile {
-                        required property string modelData
-                        tileCode: modelData
-                        tileWidth: 48
-                        tileHeight: 66
-                    }
-                }
             }
         }
 
@@ -265,95 +288,194 @@ Window {
             x: 61
             y: 245
             playerName: "Left AI"
-            scoreText: "1141"
+            scoreText: String(gameBridge.leftScore)
             accent: "#db9951"
+            dealer: gameBridge.dealer === 1
+            active: gameBridge.currentPlayer === 1
         }
 
         PlayerBadge {
             x: 1168
             y: 18
             playerName: "Top AI"
-            scoreText: "2728"
+            scoreText: String(gameBridge.oppositeScore)
             accent: "#6ea85d"
+            dealer: gameBridge.dealer === 2
+            active: gameBridge.currentPlayer === 2
         }
 
         PlayerBadge {
             x: 1441
             y: 247
             playerName: "Right AI"
-            scoreText: "1102"
+            scoreText: String(gameBridge.rightScore)
             accent: "#5789bd"
-            dealer: true
+            dealer: gameBridge.dealer === 3
+            active: gameBridge.currentPlayer === 3
         }
 
         PlayerBadge {
             x: 61
             y: 620
             playerName: "You"
-            scoreText: "28000"
+            scoreText: String(gameBridge.selfScore)
             accent: "#d65b42"
-            active: true
+            dealer: gameBridge.dealer === 0
+            active: gameBridge.currentPlayer === 0
         }
 
         Rectangle {
-            x: 32
-            y: 26
-            width: 58
-            height: 58
-            radius: 29
+            x: 28
+            y: 22
+            width: 64
+            height: 64
+            radius: 32
             color: "#c01c1b18"
             border.color: "#756655"
             border.width: 3
 
             Text {
                 anchors.centerIn: parent
-                text: "☰"
+                text: "+"
+                rotation: 45
                 color: "#fff0ca"
-                font.pixelSize: 30
+                font.pixelSize: 39
                 font.bold: true
-                font.family: "Microsoft YaHei"
-                renderType: Text.NativeRendering
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: gameBridge.newGame()
             }
         }
 
         Rectangle {
             x: 101
-            y: 29
-            width: 42
+            y: 28
+            width: 110
             height: 52
-            radius: 8
-            color: "#18872b"
-            border.color: "#8de56d"
+            radius: 10
+            color: "#b018442e"
+            border.color: "#6ecb87"
             border.width: 2
 
             Text {
                 anchors.centerIn: parent
-                text: "5"
-                color: "#efff87"
-                font.pixelSize: 29
+                text: window.speedLabels[window.speedIndex]
+                color: "#efffca"
+                font.pixelSize: 16
                 font.bold: true
-                font.family: "Microsoft YaHei"
-                renderType: Text.NativeRendering
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    window.speedIndex = (window.speedIndex + 1) % window.speedValues.length
+                    gameBridge.setAiDelay(window.speedValues[window.speedIndex])
+                }
+            }
+        }
+
+        Row {
+            x: 1195
+            y: 665
+            spacing: 12
+
+            Repeater {
+                model: gameBridge.actionOptions
+                delegate: RoundGameAction {
+                    required property var modelData
+                    label: modelData.label
+                    actionColor: modelData.color
+                    onTriggered: gameBridge.performAction(modelData.key)
+                }
             }
         }
 
         Rectangle {
-            x: 1521
-            y: 491
-            width: 54
-            height: 54
-            radius: 27
-            color: "#a5212322"
-            border.color: "#746a5e"
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: 693
+            width: Math.max(320, statusLabel.implicitWidth + 42)
+            height: 40
+            radius: 20
+            color: "#c0162b2d"
+            border.color: gameBridge.currentPlayer === 0 ? "#65f2d5" : "#537276"
             border.width: 2
 
             Text {
+                id: statusLabel
                 anchors.centerIn: parent
-                text: "•••"
-                color: "#fff3d5"
-                font.pixelSize: 22
+                text: gameBridge.statusText
+                color: "#f3f0df"
                 font.family: "Microsoft YaHei"
-                renderType: Text.NativeRendering
+                font.pixelSize: 16
+                font.bold: true
+            }
+        }
+
+        Rectangle {
+            visible: window.errorMessage.length > 0
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: 112
+            width: Math.max(360, errorLabel.implicitWidth + 44)
+            height: 46
+            radius: 12
+            color: "#e0a52a25"
+            border.color: "#ffd18a"
+            border.width: 2
+
+            Text {
+                id: errorLabel
+                anchors.centerIn: parent
+                text: window.errorMessage
+                color: "white"
+                font.family: "Microsoft YaHei"
+                font.pixelSize: 16
+            }
+        }
+
+        Rectangle {
+            visible: gameBridge.finished
+            anchors.centerIn: parent
+            width: 440
+            height: 230
+            radius: 28
+            color: "#ef142a30"
+            border.color: "#e7b755"
+            border.width: 5
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                y: 45
+                text: gameBridge.statusText
+                color: "#fff1bd"
+                font.family: "Microsoft YaHei"
+                font.pixelSize: 30
+                font.bold: true
+            }
+
+            Rectangle {
+                x: 72
+                y: 135
+                width: 136
+                height: 56
+                radius: 16
+                color: "#2b9071"
+                Text { anchors.centerIn: parent; text: "NEW"; color: "white"; font.pixelSize: 20; font.bold: true }
+                MouseArea { anchors.fill: parent; onClicked: gameBridge.newGame(); cursorShape: Qt.PointingHandCursor }
+            }
+
+            Rectangle {
+                x: 232
+                y: 135
+                width: 136
+                height: 56
+                radius: 16
+                color: "#704844"
+                Text { anchors.centerIn: parent; text: "EXIT"; color: "white"; font.pixelSize: 20; font.bold: true }
+                MouseArea { anchors.fill: parent; onClicked: gameBridge.quit(); cursorShape: Qt.PointingHandCursor }
             }
         }
     }

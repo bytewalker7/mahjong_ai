@@ -24,11 +24,44 @@ Item {
         Repeater {
             model: root.tiles
 
-            delegate: FaceTile {
-                required property string modelData
-                tileCode: modelData
-                tileWidth: root.tileWidth
-                tileHeight: root.tileHeight
+            delegate: Item {
+                required property var modelData
+                width: root.tileWidth
+                height: root.tileHeight
+
+                FaceTile {
+                    anchors.fill: parent
+                    tileCode: modelData.code
+                    tileWidth: root.tileWidth
+                    tileHeight: root.tileHeight
+                    opacity: modelData.used ? 0.42 : 1.0
+
+                    NumberAnimation on opacity {
+                        from: 0.0
+                        to: modelData.used ? 0.42 : 1.0
+                        duration: 180
+                    }
+                }
+
+                Rectangle {
+                    visible: modelData.latest
+                    anchors.fill: parent
+                    anchors.bottomMargin: parent.height * 0.045
+                    radius: Math.max(3, parent.width * 0.09)
+                    color: "transparent"
+                    border.color: "#ffd84d"
+                    border.width: 3
+                }
+
+                Text {
+                    visible: modelData.latest
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    y: -18
+                    text: "▼"
+                    color: "#ffd84d"
+                    font.pixelSize: 17
+                    font.bold: true
+                }
             }
         }
     }

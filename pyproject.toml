@@ -10,7 +10,7 @@ requires-python = ">=3.11"
 
 [project.optional-dependencies]
 test = ["pytest>=8.0"]
-ui = ["PySide6-Essentials>=6.7"]
+ui = ["PySide6-Essentials>=6.7", "PySide6-Addons>=6.7"]
 rl = ["torch>=2.2"]
 
 [project.scripts]
@@ -22,3 +22,12 @@ addopts = "-q"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+mahjong_ai = [
+    "assets/tiles/*.svg",
+    "assets/ui/*.png",
+    "assets/ui/*.svg",
+    "assets/music/*.mp3",
+    "ui/qml/*.qml",
+]

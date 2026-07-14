@@ -8,6 +8,24 @@ from mahjong_ai.simulator.strategies import PlayerStrategy, RandomPlayer
 from mahjong_ai.state.models import PlayerPosition
 
 
+def test_new_game_preserves_running_scores() -> None:
+    session = GameSession(seed=31)
+    state = session.environment.full_state
+    state.scores[PlayerPosition.SELF] = 7
+    state.scores[PlayerPosition.LEFT] = -3
+    state.scores[PlayerPosition.OPPOSITE] = -2
+    state.scores[PlayerPosition.RIGHT] = -2
+
+    session.new_game(seed=32)
+
+    assert session.view().scores == {
+        PlayerPosition.SELF: 7,
+        PlayerPosition.LEFT: -3,
+        PlayerPosition.OPPOSITE: -2,
+        PlayerPosition.RIGHT: -2,
+    }
+
+
 @dataclass
 class ObservationOnlyStrategy(PlayerStrategy):
     seen: list[Observation] = field(default_factory=list)

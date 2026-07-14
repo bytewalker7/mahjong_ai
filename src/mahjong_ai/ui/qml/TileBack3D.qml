@@ -20,7 +20,10 @@ Item {
     }
 
     Image {
-        anchors.fill: parent
+        anchors.centerIn: parent
+        width: parent.height
+        height: parent.width
+        rotation: 90
         source: "../../assets/ui/tile_back_3d.png"
         fillMode: Image.PreserveAspectFit
         smooth: true

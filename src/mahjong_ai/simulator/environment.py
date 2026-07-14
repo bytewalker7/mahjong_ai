@@ -33,7 +33,12 @@ class MahjongEnvironment:
             raise RuntimeError("call reset() before reading full_state")
         return self._state
 
-    def reset(self, seed: int | None = None, pao_counts: dict[PlayerPosition, int] | None = None) -> Observation:
+    def reset(
+        self,
+        seed: int | None = None,
+        pao_counts: dict[PlayerPosition, int] | None = None,
+        initial_scores: dict[PlayerPosition, int] | None = None,
+    ) -> Observation:
         self._rng = random.Random(seed)
         dealer = self._rng.choice(tuple(PlayerPosition))
         deck = [tile for tile in range(TILE_KIND_COUNT) for _ in range(COPIES_PER_TILE)]
@@ -55,7 +60,7 @@ class MahjongEnvironment:
             current_player=dealer,
             phase=Phase.DISCARD,
             score_rules=self.score_rules,
-            scores=empty_scores(),
+            scores=(initial_scores or empty_scores()).copy(),
             pao_counts=self._validated_pao_counts(pao_counts),
         )
         self._record("start", dealer, None)

@@ -21,7 +21,7 @@ def main() -> None:
         ui_main()
         return
     if len(sys.argv) > 1 and sys.argv[1].lower() == "play":
-        from .ui.game_window import main as play_main
+        from .ui.qml_game import main as play_main
 
         play_main()
         return

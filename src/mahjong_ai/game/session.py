@@ -21,6 +21,7 @@ class PublicGameView:
     winner: PlayerPosition | None
     result: str | None
     final_scores: dict[PlayerPosition, int] | None
+    scores: dict[PlayerPosition, int]
     drawn_tile: int | None
     dealer: PlayerPosition
     last_discard_player: PlayerPosition | None
@@ -41,6 +42,7 @@ class GameSession:
         self._environment = MahjongEnvironment()
         self._human = HumanPlayer()
         self._ais = self._build_ai_players(seed, strategies)
+        self._cumulative_scores = {position: 0 for position in PlayerPosition}
         self.new_game(seed)
 
     @property
@@ -62,8 +64,18 @@ class GameSession:
         return {position: AIPlayer(position, strategy) for position, strategy in supplied.items()}
 
     def new_game(self, seed: int | None = None) -> PublicGameView:
+        try:
+            current = self._environment.full_state
+        except RuntimeError:
+            pass
+        else:
+            self._cumulative_scores = current.scores.copy()
         self._seed = seed
-        self._environment.reset(seed, {position: 0 for position in PlayerPosition})
+        self._environment.reset(
+            seed,
+            {position: 0 for position in PlayerPosition},
+            initial_scores=self._cumulative_scores,
+        )
         return self.view()
 
     def view(self) -> PublicGameView:
@@ -78,6 +90,7 @@ class GameSession:
             observation=observation, finished=state.phase is Phase.FINISHED,
             winner=state.winner, result=state.result,
             final_scores={position: state.scores[position] for position in PlayerPosition} if state.phase is Phase.FINISHED else None,
+            scores={position: state.scores[position] for position in PlayerPosition},
             drawn_tile=drawn_tile,
             dealer=state.dealer,
             last_discard_player=state.last_discard.player if state.last_discard is not None and state.last_discard.called_by is None else None,
