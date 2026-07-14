@@ -20,6 +20,11 @@ def main() -> None:
 
         ui_main()
         return
+    if len(sys.argv) > 1 and sys.argv[1].lower() == "play":
+        from .ui.game_window import main as play_main
+
+        play_main()
+        return
     if len(sys.argv) > 1 and sys.argv[1].lower() == "simulate":
         from .simulator.cli import simulate_main
 
