@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="190" height="620" viewBox="0 0 190 620">
+  <defs>
+    <linearGradient id="greenL" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#42b62e"/>
+      <stop offset="0.35" stop-color="#20891f"/>
+      <stop offset="1" stop-color="#075b22"/>
+    </linearGradient>
+    <linearGradient id="whiteL" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fffef7"/>
+      <stop offset="0.55" stop-color="#e8eee9"/>
+      <stop offset="1" stop-color="#aebbb5"/>
+    </linearGradient>
+    <filter id="shadowL" x="-70%" y="-15%" width="220%" height="145%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <g id="tileL">
+      <path d="M5 8 L48 13 L42 55 L0 49 Z" fill="#001b16" opacity=".50" transform="translate(6 7)"/>
+      <path d="M17 5 L54 9 L48 51 L10 46 Z" fill="url(#greenL)" stroke="#064b1d" stroke-width="1.4"/>
+      <path d="M5 0 L18 5 L11 46 L0 40 Z" fill="url(#whiteL)" stroke="#87968f" stroke-width="1.2"/>
+      <path d="M18 5 L54 9 L52 15 L17 11 Z" fill="#79ea42" opacity=".94"/>
+      <path d="M17 11 L52 15" fill="none" stroke="#b4ff73" stroke-width="1.1" opacity=".8"/>
+      <path d="M12 44 L47 49" fill="none" stroke="#043d19" stroke-width="2" opacity=".65"/>
+    </g>
+  </defs>
+  <path d="M126 16 L42 587 L11 590 L94 22 Z" fill="#001713" opacity=".34" filter="url(#shadowL)"/>
+  <g transform="translate(105 12)">
+    <use href="#tileL" transform="translate(0 0)"/>
+    <use href="#tileL" transform="translate(-7 43)"/>
+    <use href="#tileL" transform="translate(-14 86)"/>
+    <use href="#tileL" transform="translate(-21 129)"/>
+    <use href="#tileL" transform="translate(-28 172)"/>
+    <use href="#tileL" transform="translate(-35 215)"/>
+    <use href="#tileL" transform="translate(-42 258)"/>
+    <use href="#tileL" transform="translate(-49 301)"/>
+    <use href="#tileL" transform="translate(-56 344)"/>
+    <use href="#tileL" transform="translate(-63 387)"/>
+    <use href="#tileL" transform="translate(-70 430)"/>
+    <use href="#tileL" transform="translate(-77 473)"/>
+    <use href="#tileL" transform="translate(-84 516)"/>
+  </g>
+</svg>
