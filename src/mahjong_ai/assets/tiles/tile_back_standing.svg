@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Original 2.5D standing Mahjong tile-back artwork for mahjong_ai. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="28" viewBox="0 0 48 28">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8fbf5"/>
+      <stop offset="1" stop-color="#bdc8be"/>
+    </linearGradient>
+    <linearGradient id="back" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#39ba71"/>
+      <stop offset="0.22" stop-color="#1d9654"/>
+      <stop offset="1" stop-color="#075936"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-35%" width="140%" height="180%">
+      <feGaussianBlur stdDeviation="1.3"/>
+    </filter>
+  </defs>
+  <rect x="4" y="23" width="40" height="3" rx="1.5" fill="#001f18" opacity=".45" filter="url(#shadow)"/>
+  <rect x="1" y="5" width="46" height="19" rx="3.5" fill="url(#body)" stroke="#82988a" stroke-width="1"/>
+  <path d="M4 18h40v3H4z" fill="#aebcb0" opacity=".9"/>
+  <rect x="1" y="1" width="46" height="18" rx="3.5" fill="url(#back)" stroke="#064c30" stroke-width="1.2"/>
+  <path d="M4 3h40" fill="none" stroke="#a7f2a5" stroke-width="1.6" stroke-linecap="round" opacity=".92"/>
+  <rect x="4" y="5" width="40" height="10" rx="2" fill="none" stroke="#72dc91" stroke-width=".8" opacity=".7"/>
+  <path d="M7 14l7-7m1 8l7-7m1 7l7-7m1 7l7-7" stroke="#4fc77b" stroke-width=".65" opacity=".56"/>
+</svg>
