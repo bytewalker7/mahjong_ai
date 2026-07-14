@@ -43,6 +43,7 @@ class GameBridge(QObject):
     """Expose immutable public snapshots and legal UI commands to QML."""
 
     stateChanged = Signal()
+    musicChanged = Signal()
     errorOccurred = Signal(str)
 
     def __init__(self, *, seed: int | None = None, parent: QObject | None = None) -> None:
@@ -56,6 +57,7 @@ class GameBridge(QObject):
         self._timer.timeout.connect(self._advance_automatic)
         self._music_player = None
         self._audio_output = None
+        self._music_enabled = True
         self._setup_background_music()
         self._rebuild_action_map()
 
@@ -130,7 +132,7 @@ class GameBridge(QObject):
 
     @Slot()
     def start(self) -> None:
-        if self._music_player is not None:
+        if self._music_enabled and self._music_player is not None:
             self._music_player.play()
         self._emit_state()
         self._schedule_automatic()
@@ -146,6 +148,18 @@ class GameBridge(QObject):
     @Slot(int)
     def setAiDelay(self, milliseconds: int) -> None:
         self._ai_delay_ms = max(100, min(2000, int(milliseconds)))
+
+    @Slot()
+    def toggleMusic(self) -> None:
+        if self._music_player is None:
+            self.errorOccurred.emit("音乐播放器不可用，请安装 PySide6-Addons")
+            return
+        self._music_enabled = not self._music_enabled
+        if self._music_enabled:
+            self._music_player.play()
+        else:
+            self._music_player.pause()
+        self.musicChanged.emit()
 
     @Slot(int)
     def clickTileAt(self, index: int) -> None:
@@ -359,6 +373,9 @@ class GameBridge(QObject):
 
     @Property(bool, notify=stateChanged)
     def finished(self): return self._view().finished
+
+    @Property(bool, notify=musicChanged)
+    def musicEnabled(self): return self._music_enabled and self._music_player is not None
 
     @Property(str, notify=stateChanged)
     def statusText(self):

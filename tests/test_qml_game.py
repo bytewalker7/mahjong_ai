@@ -64,6 +64,18 @@ def test_latest_discard_is_marked_once() -> None:
     assert sum(bool(record["latest"]) for record in bridge.selfDiscards) == 1
 
 
+def test_music_toggle_changes_bridge_property_when_audio_is_available() -> None:
+    _app()
+    bridge = GameBridge(seed=9)
+    if bridge._music_player is None:
+        return
+    assert bridge.musicEnabled
+    bridge.toggleMusic()
+    assert not bridge.musicEnabled
+    bridge.toggleMusic()
+    assert bridge.musicEnabled
+
+
 def test_qml_window_loads_with_real_public_state() -> None:
     app = _app()
     engine, bridge = create_engine(app, seed=7)

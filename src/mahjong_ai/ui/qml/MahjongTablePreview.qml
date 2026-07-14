@@ -246,7 +246,12 @@ Window {
 
             Row {
                 id: ownHand
-                x: 105
+                readonly property real leftBoundary: 190
+                readonly property real rightBoundary: selfMeldStrip.visible
+                    ? selfMeldStrip.x - 20
+                    : table.width - 105
+                x: Math.max(leftBoundary,
+                            leftBoundary + (rightBoundary - leftBoundary - width) / 2)
                 y: 748
                 spacing: 2
 
@@ -316,7 +321,7 @@ Window {
 
         PlayerBadge {
             x: 61
-            y: 620
+            y: 660
             playerName: "You"
             scoreText: String(gameBridge.selfScore)
             accent: "#d65b42"
@@ -326,20 +331,20 @@ Window {
 
         Rectangle {
             x: 28
-            y: 22
-            width: 64
-            height: 64
-            radius: 32
+            y: 27
+            width: 132
+            height: 50
+            radius: 12
             color: "#c01c1b18"
             border.color: "#756655"
-            border.width: 3
+            border.width: 2
 
             Text {
                 anchors.centerIn: parent
-                text: "+"
-                rotation: 45
+                text: "新的一局"
                 color: "#fff0ca"
-                font.pixelSize: 39
+                font.family: "Microsoft YaHei"
+                font.pixelSize: 18
                 font.bold: true
             }
 
@@ -351,7 +356,7 @@ Window {
         }
 
         Rectangle {
-            x: 101
+            x: 171
             y: 28
             width: 110
             height: 52
@@ -378,6 +383,32 @@ Window {
             }
         }
 
+        Rectangle {
+            x: 292
+            y: 28
+            width: 118
+            height: 52
+            radius: 10
+            color: gameBridge.musicEnabled ? "#b018442e" : "#b03f3230"
+            border.color: gameBridge.musicEnabled ? "#6ecb87" : "#9d8881"
+            border.width: 2
+
+            Text {
+                anchors.centerIn: parent
+                text: gameBridge.musicEnabled ? "音乐：开" : "音乐：关"
+                color: gameBridge.musicEnabled ? "#efffca" : "#dbcac4"
+                font.family: "Microsoft YaHei"
+                font.pixelSize: 16
+                font.bold: true
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: gameBridge.toggleMusic()
+            }
+        }
+
         Row {
             x: 1195
             y: 665
@@ -396,7 +427,7 @@ Window {
 
         Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
-            y: 693
+            y: 678
             width: Math.max(320, statusLabel.implicitWidth + 42)
             height: 40
             radius: 20
