@@ -21,6 +21,9 @@ class PublicGameView:
     winner: PlayerPosition | None
     result: str | None
     final_scores: dict[PlayerPosition, int] | None
+    drawn_tile: int | None
+    dealer: PlayerPosition
+    last_discard_player: PlayerPosition | None
 
 
 class GameSession:
@@ -66,10 +69,18 @@ class GameSession:
     def view(self) -> PublicGameView:
         observation = self._environment.observation(self.human_position)
         state = self._environment.full_state
+        drawn_tile: int | None = None
+        if state.events:
+            last_event = state.events[-1]
+            if last_event["player"] == self.human_position.name and last_event["kind"] in {"draw", "replacement_draw"}:
+                drawn_tile = last_event["tile"]
         return PublicGameView(
             observation=observation, finished=state.phase is Phase.FINISHED,
             winner=state.winner, result=state.result,
             final_scores={position: state.scores[position] for position in PlayerPosition} if state.phase is Phase.FINISHED else None,
+            drawn_tile=drawn_tile,
+            dealer=state.dealer,
+            last_discard_player=state.last_discard.player if state.last_discard is not None and state.last_discard.called_by is None else None,
         )
 
     def human_legal_actions(self) -> tuple[Action, ...]:
