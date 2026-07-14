@@ -16,6 +16,7 @@ Window {
     property var speedValues: [250, 550, 900]
     property var speedLabels: ["FAST", "NORMAL", "SLOW"]
     property string errorMessage: ""
+    property bool rulesVisible: false
     readonly property real fitScale: Math.min(width / 1600, height / 900)
 
     Connections {
@@ -409,6 +410,32 @@ Window {
             }
         }
 
+        Rectangle {
+            x: 421
+            y: 28
+            width: 118
+            height: 52
+            radius: 10
+            color: "#b02b3f49"
+            border.color: "#80b9c9"
+            border.width: 2
+
+            Text {
+                anchors.centerIn: parent
+                text: "游戏规则"
+                color: "#f3f0df"
+                font.family: "Microsoft YaHei"
+                font.pixelSize: 16
+                font.bold: true
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: window.rulesVisible = true
+            }
+        }
+
         Row {
             x: 1195
             y: 665
@@ -507,6 +534,125 @@ Window {
                 color: "#704844"
                 Text { anchors.centerIn: parent; text: "EXIT"; color: "white"; font.pixelSize: 20; font.bold: true }
                 MouseArea { anchors.fill: parent; onClicked: gameBridge.quit(); cursorShape: Qt.PointingHandCursor }
+            }
+        }
+
+        Item {
+            anchors.fill: parent
+            z: 100
+            visible: window.rulesVisible
+
+            Rectangle {
+                anchors.fill: parent
+                color: "#99000000"
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: window.rulesVisible = false
+            }
+
+            Rectangle {
+                anchors.centerIn: parent
+                width: 790
+                height: 600
+                radius: 24
+                color: "#f01a3034"
+                border.color: "#d9ad5b"
+                border.width: 4
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: function(mouse) { mouse.accepted = true }
+                }
+
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    y: 25
+                    text: "游戏规则"
+                    color: "#ffe8a3"
+                    font.family: "Microsoft YaHei"
+                    font.pixelSize: 28
+                    font.bold: true
+                }
+
+                Rectangle {
+                    x: 735
+                    y: 18
+                    width: 38
+                    height: 38
+                    radius: 19
+                    color: "#75433d"
+                    border.color: "#d69a7c"
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "×"
+                        color: "white"
+                        font.pixelSize: 25
+                        font.bold: true
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: window.rulesVisible = false
+                    }
+                }
+
+                Text {
+                    x: 45
+                    y: 84
+                    width: 700
+                    text: "基本规则"
+                    color: "#71ead2"
+                    font.family: "Microsoft YaHei"
+                    font.pixelSize: 22
+                    font.bold: true
+                }
+
+                Text {
+                    x: 45
+                    y: 124
+                    width: 700
+                    text: "• 四人麻将，只使用万、条、筒，共 108 张牌。\n" +
+                          "• 不使用字牌、花牌，不允许吃牌。\n" +
+                          "• 庄家 14 张先出牌，其他玩家 13 张。\n" +
+                          "• 胡牌结构：4 组面子 + 1 对将，只计算普通平胡。\n" +
+                          "• 支持碰、明杠、暗杠和补杠；杠后立即补牌。\n" +
+                          "• 响应优先级：胡 > 明杠 > 碰；同级时近家优先。\n" +
+                          "• 牌墙摸完且无人胡牌则流局。\n" +
+                          "• 每局随机庄家，积分跨局累计。"
+                    color: "#f0eee3"
+                    font.family: "Microsoft YaHei"
+                    font.pixelSize: 17
+                    lineHeight: 1.28
+                }
+
+                Text {
+                    x: 45
+                    y: 365
+                    width: 700
+                    text: "计分规则"
+                    color: "#71ead2"
+                    font.family: "Microsoft YaHei"
+                    font.pixelSize: 22
+                    font.bold: true
+                }
+
+                Text {
+                    x: 45
+                    y: 405
+                    width: 700
+                    text: "• 普通点炮：胡牌者 +1，点炮者 -1；庄家翻倍。\n" +
+                          "• 普通自摸：其他三家各 -2，胡牌者共 +6；庄家翻倍。\n" +
+                          "• 暗杠 +2，明杠 +1，补杠 +1。\n" +
+                          "• 当前炮子数固定为 0，不计算炮子分。"
+                    color: "#f0eee3"
+                    font.family: "Microsoft YaHei"
+                    font.pixelSize: 17
+                    lineHeight: 1.35
+                }
             }
         }
     }
