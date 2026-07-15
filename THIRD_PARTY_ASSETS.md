@@ -16,3 +16,27 @@ The graphics may have been renamed, resized, or converted for use in this projec
 
 The project-created `tile_back_standing.svg` is not one of these third-party
 face graphics.
+
+## Chinese Music
+
+Title: Chinese Music
+
+Version: 1.0.0
+
+Creator: BiteMe Games
+
+Project file: `src/mahjong_ai/assets/music/background music.wav`
+
+### About
+
+2 pieces of music, designed for a Chinese martial arts setting, using mainly
+the Guzheng, Flute, and Drums as instruments.
+
+The songs are 60 seconds long and come with looping and non-looping versions.
+The game uses the music as looping background audio.
+
+### Changelog
+
+#### v1.0.0 (28/02/2024)
+
+- Initial release.

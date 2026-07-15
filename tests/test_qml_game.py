@@ -9,7 +9,7 @@ from PySide6.QtGui import QGuiApplication
 
 from mahjong_ai.simulator.models import DiscardAction
 from mahjong_ai.state.models import PlayerPosition
-from mahjong_ai.ui.qml_game import GameBridge, create_engine
+from mahjong_ai.ui.qml_game import GameBridge, _find_background_music, create_engine
 
 
 def _app() -> QGuiApplication:
@@ -74,6 +74,15 @@ def test_music_toggle_changes_bridge_property_when_audio_is_available() -> None:
     assert not bridge.musicEnabled
     bridge.toggleMusic()
     assert bridge.musicEnabled
+
+
+def test_background_music_prefers_wav_and_keeps_mp3_fallback(tmp_path) -> None:
+    mp3 = tmp_path / "background music.mp3"
+    wav = tmp_path / "background music.wav"
+    mp3.write_bytes(b"mp3")
+    assert _find_background_music(tmp_path) == mp3
+    wav.write_bytes(b"wav")
+    assert _find_background_music(tmp_path) == wav
 
 
 def test_qml_window_loads_with_real_public_state() -> None:

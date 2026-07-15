@@ -39,6 +39,18 @@ from ..tiles import code_to_tile
 _MELD_SIZE = {"peng": 3, "exposed_gang": 4, "concealed_gang": 4, "added_gang": 4}
 
 
+def _find_background_music(music_directory: Path) -> Path | None:
+    """Prefer lossless WAV while retaining the original MP3 fallback."""
+    return next(
+        (
+            music_directory / filename
+            for filename in ("background music.wav", "background music.mp3")
+            if (music_directory / filename).exists()
+        ),
+        None,
+    )
+
+
 class GameBridge(QObject):
     """Expose immutable public snapshots and legal UI commands to QML."""
 
@@ -64,8 +76,9 @@ class GameBridge(QObject):
     def _setup_background_music(self) -> None:
         if QMediaPlayer is None or QAudioOutput is None:
             return
-        music_path = Path(__file__).parents[1] / "assets" / "music" / "background music.mp3"
-        if not music_path.exists():
+        music_directory = Path(__file__).parents[1] / "assets" / "music"
+        music_path = _find_background_music(music_directory)
+        if music_path is None:
             return
         self._audio_output = QAudioOutput(self)
         self._audio_output.setVolume(0.32)

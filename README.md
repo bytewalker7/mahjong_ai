@@ -26,7 +26,7 @@ python -m pip install -e ".[ui,test]"
 python -m mahjong_ai play
 ```
 
-macOS、Windows 在激活虚拟环境后都可以直接使用本文后续的 `python -m mahjong_ai ...` 命令。桌面依赖会安装 PySide6 Essentials 和 Addons，后者用于播放背景音乐。
+macOS、Windows 在激活虚拟环境后都可以直接使用本文后续的 `python -m mahjong_ai ...` 命令。桌面依赖会安装 PySide6 Essentials 和 Addons，后者用于播放背景音乐。程序优先加载 `assets/music/background music.wav`，没有 WAV 时自动回退到同名 MP3。
 
 人类玩家固定为“自己”座位，三个 AI 使用相互独立的策略实例和不同随机 seed。每个 AI 只能读取自己的手牌和公开牌局信息，不能访问其他玩家暗手、真实牌墙顺序或未来摸牌。界面同样只显示人类玩家有权看到的信息。
 

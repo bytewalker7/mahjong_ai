@@ -29,5 +29,6 @@ mahjong_ai = [
     "assets/ui/*.png",
     "assets/ui/*.svg",
     "assets/music/*.mp3",
+    "assets/music/*.wav",
     "ui/qml/*.qml",
 ]
