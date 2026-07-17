@@ -129,6 +129,7 @@ class Observation:
     wall_remaining: int
     turn: int
     last_discard_tile: int | None
+    dealer: PlayerPosition = PlayerPosition.SELF
 
 
 @dataclass(frozen=True)

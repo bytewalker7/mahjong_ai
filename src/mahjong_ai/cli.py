@@ -50,6 +50,11 @@ def main() -> None:
 
         train_main(sys.argv[2:])
         return
+    if len(sys.argv) > 1 and sys.argv[1].lower() == "train-ppo":
+        from .rl.cli import ppo_main
+
+        ppo_main(sys.argv[2:])
+        return
     if len(sys.argv) > 1 and sys.argv[1].lower() == "evaluate-rl":
         from .rl.cli import evaluate_main
 

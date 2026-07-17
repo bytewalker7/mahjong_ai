@@ -105,13 +105,21 @@ class NoisyHeuristicPlayer(HeuristicPlayer):
     temperature: float = 1.0
 
     def choose_action(self, observation: Observation, legal_actions: tuple[Action, ...]) -> Action:
-        scores = [self._score_action(observation, action) for action in legal_actions]
+        # Ranking a discard calculates shanten and ukeire for every candidate.
+        # Compute it once per decision rather than once per legal action.
+        ranked = self._rank_discards(observation) if any(isinstance(action, DiscardAction) for action in legal_actions) else None
+        scores = [self._score_action(observation, action, ranked) for action in legal_actions]
         temperature = max(self.temperature, 0.05)
         maximum = max(scores)
         weights = [math.exp((score - maximum) / temperature) for score in scores]
         return self.rng.choices(list(legal_actions), weights=weights, k=1)[0]
 
-    def _score_action(self, observation: Observation, action: Action) -> float:
+    def _score_action(
+        self,
+        observation: Observation,
+        action: Action,
+        ranked: list[tuple[int, int, int, int]] | None = None,
+    ) -> float:
         if isinstance(action, (TsumoAction, RonAction)):
             return 1_000.0
         if isinstance(action, (ConcealedGangAction, AddedGangAction, ExposedGangAction)):
@@ -121,7 +129,7 @@ class NoisyHeuristicPlayer(HeuristicPlayer):
         if isinstance(action, PassAction):
             return 0.0
         if isinstance(action, DiscardAction):
-            ranked = self._rank_discards(observation)
+            ranked = ranked if ranked is not None else self._rank_discards(observation)
             rank = next(index for index, candidate in enumerate(ranked) if candidate[0] == action.tile)
             _tile, shanten, total, kinds = ranked[rank]
             return -shanten * 100 + total * 3 + kinds - rank * 0.01

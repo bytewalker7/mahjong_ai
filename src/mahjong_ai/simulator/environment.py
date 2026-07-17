@@ -21,9 +21,16 @@ from .scoring import ScoreRules, empty_scores
 class MahjongEnvironment:
     """A deterministic environment; strategies receive only :class:`Observation`."""
 
-    def __init__(self, rules: RuleConfig | None = None, score_rules: ScoreRules | None = None) -> None:
+    def __init__(
+        self,
+        rules: RuleConfig | None = None,
+        score_rules: ScoreRules | None = None,
+        *,
+        record_full_snapshots: bool = True,
+    ) -> None:
         self.rules = rules or RuleConfig()
         self.score_rules = score_rules or ScoreRules()
+        self.record_full_snapshots = record_full_snapshots
         self._rng = random.Random()
         self._state: FullGameState | None = None
 
@@ -91,6 +98,7 @@ class MahjongEnvironment:
             wall_remaining=state.wall_remaining,
             turn=state.turn,
             last_discard_tile=state.last_discard.tile if state.last_discard is not None and state.last_discard.called_by is None else None,
+            dealer=state.dealer,
         )
 
     def legal_actions(self) -> tuple[Action, ...]:
@@ -303,7 +311,15 @@ class MahjongEnvironment:
         return tuple(result)
 
     def _record(self, kind: str, player: PlayerPosition | None, tile: int | None, source: PlayerPosition | None = None) -> None:
-        self.full_state.events.append({"kind": kind, "player": player.name if player is not None else None, "tile": tile, "source": source.name if source is not None else None, "snapshot": self.full_snapshot()})
+        event = {
+            "kind": kind,
+            "player": player.name if player is not None else None,
+            "tile": tile,
+            "source": source.name if source is not None else None,
+        }
+        if self.record_full_snapshots:
+            event["snapshot"] = self.full_snapshot()
+        self.full_state.events.append(event)
 
     def full_snapshot(self) -> dict[str, object]:
         state = self.full_state

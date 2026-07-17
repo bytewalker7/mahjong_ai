@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from mahjong_ai.meld import MeldType
 from mahjong_ai.rl.environment import DiscardRLEnvironment
+from mahjong_ai.rl.training import heuristic_action, heuristic_target, make_policy, policy_action
 from mahjong_ai.simulator.environment import MahjongEnvironment
 from mahjong_ai.simulator.models import FullDiscardRecord
 from mahjong_ai.state.models import PlayerPosition
@@ -42,3 +43,29 @@ def test_rl_environment_exposes_only_masked_discard_decisions() -> None:
         tile = next(index for index, allowed in enumerate(step.legal_mask) if allowed)
         step = environment.step(tile)
     assert isinstance(step.score, int)
+
+
+def test_v2_rl_features_are_public_fixed_size_and_deterministic() -> None:
+    environment = DiscardRLEnvironment(opponent_mode="curriculum")
+    first = environment.reset(2026)
+    encoded_again = environment.encode(first.observation)
+    assert len(first.features) == 441
+    assert first.features == encoded_again
+    assert not hasattr(first.observation, "other_hands")
+    assert not hasattr(first.observation, "wall")
+
+
+def test_behavior_clone_target_includes_every_tied_best_action() -> None:
+    step = DiscardRLEnvironment(opponent_mode="random").reset(77)
+    target = heuristic_target(step)
+    assert len(target) == 27
+    assert abs(sum(target) - 1.0) < 1e-9
+    assert target[heuristic_action(step)] > 0.0
+    assert all(probability == 0.0 for probability, legal in zip(target, step.legal_mask) if not legal)
+
+
+def test_tile_scorer_masks_illegal_discards() -> None:
+    step = DiscardRLEnvironment(opponent_mode="random").reset(91)
+    policy = make_policy(hidden_size=32)
+    action = policy_action(policy, step.features, step.legal_mask)
+    assert step.legal_mask[action]
